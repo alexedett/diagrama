@@ -1,0 +1,92 @@
+from collections import deque
+
+# Definir pesos y capacidad de remar
+amigos = {'C': 100, 'F': 52, 'J': 46, 'P': 49}
+remeros = {'C', 'F', 'J'}  # P no puede remar
+
+# Estado: (C, F, J, P, lado_barca)
+estado_inicial = (0, 0, 0, 0, 'A')
+estado_objetivo = (1, 1, 1, 1, 'B')
+
+def movimiento_valido(estado, movimiento):
+    lado = estado[4]
+    peso = sum(amigos[p] for p in movimiento)
+    # Verificar peso y requisito de remero para Pablo
+    if peso > 100:
+        return False
+    if 'P' in movimiento and not any(r in movimiento for r in remeros):
+        return False
+    # Asegurar que los que se mueven están en el lado actual
+    lado_actual = 0 if lado == 'A' else 1
+    return all(estado['CFJP'.index(p)] == lado_actual for p in movimiento)
+
+def aplicar_movimiento(estado, movimiento):
+    nuevo_estado = list(estado)
+    nuevo_lado = 'B' if estado[4] == 'A' else 'A'
+    direccion = 1 if nuevo_lado == 'B' else -1
+    for p in movimiento:
+        idx = 'CFJP'.index(p)
+        nuevo_estado[idx] += direccion
+    nuevo_estado[4] = nuevo_lado
+    return tuple(nuevo_estado)
+
+def resolver_cruce_rio():
+    visitados = set()
+    cola = deque([(estado_inicial, [])])
+    
+    while cola:
+        estado, camino = cola.popleft()
+        if estado == estado_objetivo:
+            return camino
+        if estado in visitados:
+            continue
+        visitados.add(estado)
+        
+        # Generar movimientos posibles (1 o 2 personas)
+        lado_actual = 0 if estado[4] == 'A' else 1
+        disponibles = [p for p in 'CFJP' if estado['CFJP'.index(p)] == lado_actual]
+        for i in range(len(disponibles)):
+            mov1 = [disponibles[i]]
+            if movimiento_valido(estado, mov1):
+                nuevo_estado = aplicar_movimiento(estado, mov1)
+                cola.append((nuevo_estado, camino + [f"{mov1[0]} -> {estado[4] == 'A' and 'B' or 'A'}"]))
+            for j in range(i + 1, len(disponibles)):
+                mov2 = [disponibles[i], disponibles[j]]
+                if movimiento_valido(estado, mov2):
+                    nuevo_estado = aplicar_movimiento(estado, mov2)
+                    cola.append((nuevo_estado, camino + [f"{mov2[0]}+{mov2[1]} -> {estado[4] == 'A' and 'B' or 'A'}"]))
+
+    return None
+
+# Ejecutar simulación
+solucion = resolver_cruce_rio()
+print("Solución encontrada en", len(solucion), "viajes:")
+for paso in solucion:
+    print(paso)
+
+# Respuestas a las preguntas de reflexión
+print("\nReflexión sobre el proceso:\n")
+
+print("1. Descomposición del Problema:")
+print("- Dividí el problema en: 1) Definir estados (quién está en cada lado), 2) Establecer reglas (peso ≤ 100 kg, Pablo con remero), 3) Encontrar una secuencia válida.")
+print("- Patrón: Hay que alternar cruces y retornos, optimizando pares de personas.")
+
+print("2. Abstracción:")
+print("- Elementos clave: Pesos de los amigos, quién puede remar, y dónde está la barca.")
+print("- Ignoré: Detalles como el tiempo de cada viaje, porque solo cuenta el número de viajes.")
+
+print("3. Pensamiento Algorítmico:")
+print("- Pasos: 1) Verificar si todos están en B, 2) Elegir 1 o 2 personas válidas, 3) Cruzar, 4) Regresar la barca, 5) Repetir.")
+print("- Instrucciones: 'Elige 1 o 2 personas con peso ≤ 100 kg, asegura que Pablo tenga un remero, cruza al otro lado, regresa la barca con un remero, y sigue hasta que todos estén en B.'")
+
+print("4. Detección de Errores y Corrección:")
+print("- Error inicial: Probé Francisco + Pablo (101 kg), pero excedía el límite. Lo corregí usando Juan + Pablo (95 kg).")
+print("- Estrategia: Revisé cada paso contra las reglas y conté los viajes para minimizarlos.")
+
+print("5. Relación con la IA:")
+print("- Sí, una IA puede resolverlo con búsqueda en grafos (BFS), como este código. Explora todos los estados posibles de forma sistemática.")
+print("- Similitud: Yo usé lógica para decidir pasos; la IA prueba opciones con un algoritmo, pero ambos buscamos la solución más eficiente.")
+
+print("6. Creatividad y Soluciones Alternativas:")
+print("- Alternativa: Enviar a Carlos primero, pero requiere más viajes. La solución de 7 viajes es la más eficiente.")
+print("- Mejora: Con más tiempo, podría usar heurísticas (e.g., priorizar mover a Carlos pronto) para optimizar aún más.")
